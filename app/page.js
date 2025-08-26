@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function Home() {
   const [form, setForm] = useState({
@@ -15,6 +15,8 @@ export default function Home() {
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
+    // 🔹 Limpia mensajes si el usuario empieza a escribir
+    setMsg("");
   };
 
   const handleSubmit = async (e) => {
@@ -34,12 +36,28 @@ export default function Home() {
 
       if (!res.ok) throw new Error("❌ No se pudo conectar con el servidor.");
       setMsg("✅ Datos enviados con éxito 🚀");
+
+      // 🔹 Reinicia el formulario
+      setForm({
+        vida: "",
+        tipo: "",
+        nombre: "",
+        concurrencia: "",
+      });
     } catch (err) {
       setMsg(err.message);
     } finally {
       setLoading(false);
     }
   };
+
+  // 🔹 Borra mensaje automáticamente a los 3s
+  useEffect(() => {
+    if (msg) {
+      const timer = setTimeout(() => setMsg(""), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [msg]);
 
   return (
     <main className="min-h-screen flex">
@@ -70,6 +88,7 @@ export default function Home() {
               placeholder="Vida del Componente"
               value={form.vida}
               onChange={handleChange}
+              disabled={loading}
               className="w-full px-4 py-2 border rounded-lg"
             />
             <input
@@ -77,6 +96,7 @@ export default function Home() {
               placeholder="Tipo de Componente"
               value={form.tipo}
               onChange={handleChange}
+              disabled={loading}
               className="w-full px-4 py-2 border rounded-lg"
             />
             <input
@@ -84,6 +104,7 @@ export default function Home() {
               placeholder="Nombre del Componente"
               value={form.nombre}
               onChange={handleChange}
+              disabled={loading}
               className="w-full px-4 py-2 border rounded-lg"
             />
             <input
@@ -91,13 +112,14 @@ export default function Home() {
               placeholder="PROD Concurrencia/mes (±)"
               value={form.concurrencia}
               onChange={handleChange}
+              disabled={loading}
               className="w-full px-4 py-2 border rounded-lg"
             />
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-green-700 text-white py-2 rounded-lg font-semibold hover:bg-green-800 transition"
+              className="w-full bg-green-700 text-white py-2 rounded-lg font-semibold hover:bg-green-800 transition disabled:opacity-50"
             >
               {loading ? "Enviando..." : "Enviar"}
             </button>
