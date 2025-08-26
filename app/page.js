@@ -1,9 +1,8 @@
 "use client";
-
 import { useState } from "react";
 
 export default function Home() {
-  const [form, setForm] = useState({
+  const [formData, setFormData] = useState({
     vida: "",
     tipo: "",
     nombre: "",
@@ -11,16 +10,21 @@ export default function Home() {
   });
 
   const [loading, setLoading] = useState(false);
-  const [msg, setMsg] = useState("");
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setMsg("");
+    setError("");
+    setSuccess(false);
 
     try {
       const res = await fetch(
@@ -28,91 +32,111 @@ export default function Home() {
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(form),
+          body: JSON.stringify(formData),
         }
       );
 
-      if (!res.ok) throw new Error("❌ No se pudo conectar con el servidor.");
-      setMsg("✅ Datos enviados con éxito 🚀");
+      if (!res.ok) {
+        throw new Error("Error al enviar los datos");
+      }
+
+      setSuccess(true);
+
+      // 🔹 Reiniciar el formulario después del envío exitoso
+      setFormData({
+        vida: "",
+        tipo: "",
+        nombre: "",
+        concurrencia: "",
+      });
     } catch (err) {
-      setMsg(err.message);
+      setError(err.message || "Error al enviar");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <main className="min-h-screen flex">
-      {/* Panel izquierdo */}
-      <div className="w-1/2 bg-green-900 text-white flex flex-col justify-center items-start px-16">
-        <h1 className="text-4xl font-bold mb-4">
-          ¡Bienvenido al Estimador de costos AWS!
+    <main className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-6">
+      <div className="bg-white shadow-lg rounded-2xl p-8 w-full max-w-md">
+        <h1 className="text-2xl font-bold text-green-700 mb-6 text-center">
+          Estimador de Costes AWS
         </h1>
-        <p className="text-lg mb-2">
-          Calcula costos de servicios en la nube AWS{" "}
-          <span className="text-yellow-400">más fácil</span> y{" "}
-          <span className="text-yellow-400">rápido que nunca.</span>
-        </p>
-        <div className="mt-6">
-          <img src="/logo.png" alt="Seguros Bolivar" className="h-20" />
-        </div>
-      </div>
 
-      {/* Panel derecho */}
-      <div className="w-1/2 bg-gray-50 flex justify-center items-center">
-        <div className="bg-white shadow-xl rounded-2xl p-8 w-full max-w-md">
-          <h2 className="text-xl font-bold text-gray-800 mb-4">
-            Completa los datos
-          </h2>
-          <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Vida del Componente
+            </label>
             <input
+              type="text"
               name="vida"
-              placeholder="Vida del Componente"
-              value={form.vida}
+              value={formData.vida}
               onChange={handleChange}
-              className="w-full px-4 py-2 border rounded-lg"
+              required
+              className="mt-1 block w-full rounded-lg border border-gray-300 p-2"
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Tipo de Componente
+            </label>
             <input
+              type="text"
               name="tipo"
-              placeholder="Tipo de Componente"
-              value={form.tipo}
+              value={formData.tipo}
               onChange={handleChange}
-              className="w-full px-4 py-2 border rounded-lg"
+              required
+              className="mt-1 block w-full rounded-lg border border-gray-300 p-2"
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Nombre del Componente
+            </label>
             <input
+              type="text"
               name="nombre"
-              placeholder="Nombre del Componente"
-              value={form.nombre}
+              value={formData.nombre}
               onChange={handleChange}
-              className="w-full px-4 py-2 border rounded-lg"
+              required
+              className="mt-1 block w-full rounded-lg border border-gray-300 p-2"
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              PROD Concurrencia/mes (±)
+            </label>
             <input
+              type="number"
               name="concurrencia"
-              placeholder="PROD Concurrencia/mes (±)"
-              value={form.concurrencia}
+              value={formData.concurrencia}
               onChange={handleChange}
-              className="w-full px-4 py-2 border rounded-lg"
+              required
+              className="mt-1 block w-full rounded-lg border border-gray-300 p-2"
             />
+          </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-green-700 text-white py-2 rounded-lg font-semibold hover:bg-green-800 transition"
-            >
-              {loading ? "Enviando..." : "Enviar"}
-            </button>
-          </form>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition"
+          >
+            {loading ? "Enviando..." : "Enviar"}
+          </button>
+        </form>
 
-          {msg && (
-            <p
-              className={`mt-4 text-center text-sm ${
-                msg.startsWith("✅") ? "text-green-700" : "text-red-600"
-              }`}
-            >
-              {msg}
-            </p>
-          )}
-        </div>
+        {success && (
+          <p className="text-green-600 mt-4 text-center">
+            ✅ Datos enviados correctamente
+          </p>
+        )}
+        {error && (
+          <p className="text-red-600 mt-4 text-center">❌ {error}</p>
+        )}
       </div>
     </main>
   );
