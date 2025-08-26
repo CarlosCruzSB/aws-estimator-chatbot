@@ -1,113 +1,119 @@
 "use client";
+
 import { useState } from "react";
 
 export default function Home() {
-  const [vidaComponente, setVidaComponente] = useState("");
-  const [tipoComponente, setTipoComponente] = useState("");
-  const [nombreComponente, setNombreComponente] = useState("");
-  const [prodConcurrencia, setProdConcurrencia] = useState("");
+  const [form, setForm] = useState({
+    vida: "",
+    tipo: "",
+    nombre: "",
+    concurrencia: "",
+  });
+
   const [loading, setLoading] = useState(false);
-  const [mensaje, setMensaje] = useState("");
+  const [msg, setMsg] = useState("");
+
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setMensaje("");
+    setMsg("");
 
     try {
-      const response = await fetch(
+      const res = await fetch(
         "https://segurobolivar-trial.app.n8n.cloud/webhook-test/aws-estimator",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            vidaComponente,
-            tipoComponente,
-            nombreComponente,
-            prodConcurrencia,
-          }),
+          body: JSON.stringify(form),
         }
       );
 
-      if (!response.ok) throw new Error("Error en la petición");
-
-      setMensaje("✅ Datos enviados correctamente. Revisa el Excel.");
-    } catch (error) {
-      setMensaje("❌ No se pudo conectar con el servidor.");
+      if (!res.ok) throw new Error("❌ No se pudo conectar con el servidor.");
+      setMsg("✅ Datos enviados con éxito 🚀");
+    } catch (err) {
+      setMsg(err.message);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen grid grid-cols-1 md:grid-cols-2">
-      {/* Panel izquierdo estilo Bolívar */}
-      <div className="bg-[#006b5e] flex flex-col justify-center items-center text-white p-10">
-        <h1 className="text-4xl font-bold mb-4">¡Bienvenido!</h1>
-        <p className="text-xl">
-          Estimador de costos AWS <br />
-          más fácil y rápido que nunca 🚀
+    <main className="min-h-screen flex">
+      {/* Panel izquierdo */}
+      <div className="w-1/2 bg-green-900 text-white flex flex-col justify-center items-start px-16">
+        <h1 className="text-4xl font-bold mb-4">
+          ¡Bienvenido al Estimador AWS!
+        </h1>
+        <p className="text-lg mb-2">
+          Calcula costos de servicios en la nube{" "}
+          <span className="text-yellow-400">más fácil</span> y{" "}
+          <span className="text-yellow-400">rápido que nunca.</span>
         </p>
+        <div className="mt-6">
+          <img src="/logo.png" alt="Seguros Bolivar" className="h-20" />
+        </div>
       </div>
 
-      {/* Panel derecho con tarjeta */}
-      <div className="flex items-center justify-center p-6">
+      {/* Panel derecho */}
+      <div className="w-1/2 bg-gray-50 flex justify-center items-center">
         <div className="bg-white shadow-xl rounded-2xl p-8 w-full max-w-md">
-          <h2 className="text-2xl font-semibold text-gray-800 mb-6">
+          <h2 className="text-xl font-bold text-gray-800 mb-4">
             Completa los datos
           </h2>
-
           <form onSubmit={handleSubmit} className="space-y-4">
             <input
-              type="text"
+              name="vida"
               placeholder="Vida del Componente"
-              value={vidaComponente}
-              onChange={(e) => setVidaComponente(e.target.value)}
-              className="w-full border p-3 rounded-lg"
-              required
+              value={form.vida}
+              onChange={handleChange}
+              className="w-full px-4 py-2 border rounded-lg"
             />
-
             <input
-              type="text"
+              name="tipo"
               placeholder="Tipo de Componente"
-              value={tipoComponente}
-              onChange={(e) => setTipoComponente(e.target.value)}
-              className="w-full border p-3 rounded-lg"
-              required
+              value={form.tipo}
+              onChange={handleChange}
+              className="w-full px-4 py-2 border rounded-lg"
             />
-
             <input
-              type="text"
+              name="nombre"
               placeholder="Nombre del Componente"
-              value={nombreComponente}
-              onChange={(e) => setNombreComponente(e.target.value)}
-              className="w-full border p-3 rounded-lg"
-              required
+              value={form.nombre}
+              onChange={handleChange}
+              className="w-full px-4 py-2 border rounded-lg"
             />
-
             <input
-              type="number"
+              name="concurrencia"
               placeholder="PROD Concurrencia/mes (±)"
-              value={prodConcurrencia}
-              onChange={(e) => setProdConcurrencia(e.target.value)}
-              className="w-full border p-3 rounded-lg"
-              required
+              value={form.concurrencia}
+              onChange={handleChange}
+              className="w-full px-4 py-2 border rounded-lg"
             />
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-[#ffb81c] hover:bg-[#e0a418] text-black font-bold py-3 rounded-lg"
+              className="w-full bg-green-700 text-white py-2 rounded-lg font-semibold hover:bg-green-800 transition"
             >
               {loading ? "Enviando..." : "Enviar"}
             </button>
           </form>
 
-          {mensaje && (
-            <p className="mt-4 text-center text-gray-700">{mensaje}</p>
+          {msg && (
+            <p
+              className={`mt-4 text-center text-sm ${
+                msg.startsWith("✅") ? "text-green-700" : "text-red-600"
+              }`}
+            >
+              {msg}
+            </p>
           )}
         </div>
       </div>
-    </div>
+    </main>
   );
 }
