@@ -46,10 +46,10 @@ export default function Home() {
       {/* Panel izquierdo */}
       <div className="w-1/2 bg-green-900 text-white flex flex-col justify-center items-start px-16">
         <h1 className="text-4xl font-bold mb-4">
-          ¡Bienvenido al Estimador AWS!
+          ¡Bienvenido al Estimador de costos AWS!
         </h1>
         <p className="text-lg mb-2">
-          Calcula costos de servicios en la nube{" "}
+          Calcula costos de servicios en la nube AWS{" "}
           <span className="text-yellow-400">más fácil</span> y{" "}
           <span className="text-yellow-400">rápido que nunca.</span>
         </p>
