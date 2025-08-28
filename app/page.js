@@ -26,7 +26,7 @@ export default function Home() {
 
     try {
       const res = await fetch(
-        "https://segurobolivar-trial.app.n8n.cloud/webhook/aws-estimator",
+        "https://segurobolivar-trial.app.n8n.cloud/webhook/208ea95b-9608-40bd-bb77-196fdbd720c8",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
