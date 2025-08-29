@@ -15,13 +15,14 @@ export default function Home() {
   const sendMessage = async () => {
     if (!input.trim()) return;
 
-    // ➡️ Agrega mensaje del usuario al chat
+    // ➡️ Mensaje del usuario
     const newUserMsg = { role: "user", text: input };
     setMessages((prev) => [...prev, newUserMsg]);
     setInput("");
     setLoading(true);
 
     try {
+      // ⚠️ Reemplaza esta URL con la de tu n8n (usa webhook-test si estás en modo debug)
       const res = await fetch(
         "https://segurobolivar-trial.app.n8n.cloud/webhook/aws-estimator",
         {
@@ -33,6 +34,7 @@ export default function Home() {
 
       if (!res.ok) throw new Error("❌ Error al conectar con el servidor.");
       const data = await res.json();
+      console.log("📩 Respuesta de n8n:", data);
 
       let botReplies = [];
 
@@ -54,7 +56,6 @@ export default function Home() {
 
       // 🔹 Caso: ya está completo
       if (data.status === "complete") {
-        // Feedback técnico como lista
         if (Array.isArray(data.feedback) && data.feedback.length > 0) {
           botReplies.push({
             role: "bot",
@@ -62,7 +63,6 @@ export default function Home() {
             listType: "feedback",
           });
         }
-        // Riesgos como lista
         if (Array.isArray(data.risks) && data.risks.length > 0) {
           botReplies.push({
             role: "bot",
@@ -70,7 +70,6 @@ export default function Home() {
             listType: "risks",
           });
         }
-        // Tabla de costos
         if (data.html) {
           botReplies.push({
             role: "bot",
@@ -81,6 +80,7 @@ export default function Home() {
 
       setMessages((prev) => [...prev, ...botReplies]);
     } catch (err) {
+      console.error("⚠️ Error en fetch:", err);
       setMessages((prev) => [
         ...prev,
         { role: "bot", text: "❌ Hubo un error al procesar tu solicitud." },
@@ -177,4 +177,3 @@ export default function Home() {
     </main>
   );
 }
-
