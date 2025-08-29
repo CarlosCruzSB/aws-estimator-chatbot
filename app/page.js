@@ -15,14 +15,12 @@ export default function Home() {
   const sendMessage = async () => {
     if (!input.trim()) return;
 
-    // ➡️ Mensaje del usuario
     const newUserMsg = { role: "user", text: input };
     setMessages((prev) => [...prev, newUserMsg]);
     setInput("");
     setLoading(true);
 
     try {
-      // ⚠️ Reemplaza esta URL con la de tu n8n (usa webhook-test si estás en modo debug)
       const res = await fetch(
         "https://segurobolivar-trial.app.n8n.cloud/webhook/aws-estimator",
         {
@@ -45,13 +43,13 @@ export default function Home() {
           text: "Necesito más información para continuar:",
         });
 
-        (Array.isArray(data.questions_pending) ? data.questions_pending : []).forEach(
-          (q) => {
+        if (Array.isArray(data.questions_pending)) {
+          data.questions_pending.forEach((q) => {
             q.questions.forEach((qq) =>
               botReplies.push({ role: "bot", text: `❓ ${qq}` })
             );
-          }
-        );
+          });
+        }
       }
 
       // 🔹 Caso: ya está completo
@@ -121,7 +119,7 @@ export default function Home() {
                     : "bg-gray-100 self-start text-gray-800"
                 }`}
               >
-                {/* Texto normal */}
+                {/* Texto simple */}
                 {msg.text && <p>{msg.text}</p>}
 
                 {/* Listas */}
@@ -142,7 +140,7 @@ export default function Home() {
                   </ul>
                 )}
 
-                {/* HTML de costos */}
+                {/* HTML (tabla de costos) */}
                 {msg.html && (
                   <div
                     className="mt-2"
@@ -177,3 +175,4 @@ export default function Home() {
     </main>
   );
 }
+
