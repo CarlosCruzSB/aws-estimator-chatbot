@@ -4,7 +4,10 @@ import { useState } from "react";
 
 export default function Home() {
   const [messages, setMessages] = useState([
-    { role: "bot", text: "👋 ¡Hola! Soy tu asistente para estimar costos en AWS. Cuéntame qué necesitas." },
+    {
+      role: "bot",
+      text: "👋 ¡Hola! Soy tu asistente para estimar costos en AWS. Cuéntame qué necesitas.",
+    },
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -12,7 +15,7 @@ export default function Home() {
   const sendMessage = async () => {
     if (!input.trim()) return;
 
-    // agrega mensaje del usuario al chat
+    // ➡️ Agrega mensaje del usuario al chat
     const newUserMsg = { role: "user", text: input };
     setMessages((prev) => [...prev, newUserMsg]);
     setInput("");
@@ -31,14 +34,15 @@ export default function Home() {
       if (!res.ok) throw new Error("❌ Error al conectar con el servidor.");
       const data = await res.json();
 
-      // Bot responde según status
       let botReplies = [];
 
+      // 🔹 Caso: falta información
       if (data.status === "needs_info") {
         botReplies.push({
           role: "bot",
           text: "Necesito más información para continuar:",
         });
+
         (Array.isArray(data.questions_pending) ? data.questions_pending : []).forEach(
           (q) => {
             q.questions.forEach((qq) =>
@@ -46,26 +50,30 @@ export default function Home() {
             );
           }
         );
-      } else if (data.status === "complete") {
-        // feedback técnico
-        if (data.feedback) {
+      }
+
+      // 🔹 Caso: ya está completo
+      if (data.status === "complete") {
+        // Feedback técnico como lista
+        if (Array.isArray(data.feedback) && data.feedback.length > 0) {
           botReplies.push({
             role: "bot",
-            text: `💡 Recomendaciones:\n${data.feedback}`,
+            list: data.feedback,
+            listType: "feedback",
           });
         }
-        // riesgos
-        if (data.risks) {
+        // Riesgos como lista
+        if (Array.isArray(data.risks) && data.risks.length > 0) {
           botReplies.push({
             role: "bot",
-            text: `⚠️ Riesgos:\n${data.risks}`,
+            list: data.risks,
+            listType: "risks",
           });
         }
-        // tabla de costos
+        // Tabla de costos
         if (data.html) {
           botReplies.push({
             role: "bot",
-            text: "💰 Aquí tienes la estimación de costos:",
             html: data.html,
           });
         }
@@ -107,18 +115,34 @@ export default function Home() {
             {messages.map((msg, i) => (
               <div
                 key={i}
-                className={`p-3 rounded-lg max-w-xs ${
+                className={`p-3 rounded-lg max-w-xs whitespace-pre-wrap ${
                   msg.role === "user"
                     ? "bg-green-100 self-end text-green-900 ml-auto"
                     : "bg-gray-100 self-start text-gray-800"
                 }`}
               >
-                {msg.text &&
-                  msg.text.split("\n").map((line, idx) => (
-                    <p key={idx} className="mb-1">
-                      {line}
-                    </p>
-                  ))}
+                {/* Texto normal */}
+                {msg.text && <p>{msg.text}</p>}
+
+                {/* Listas */}
+                {msg.list && (
+                  <ul className="list-disc pl-5 space-y-1">
+                    {msg.list.map((item, idx) => (
+                      <li
+                        key={idx}
+                        className={
+                          msg.listType === "risks"
+                            ? "text-red-600"
+                            : "text-green-800"
+                        }
+                      >
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                {/* HTML de costos */}
                 {msg.html && (
                   <div
                     className="mt-2"
@@ -153,3 +177,4 @@ export default function Home() {
     </main>
   );
 }
+
