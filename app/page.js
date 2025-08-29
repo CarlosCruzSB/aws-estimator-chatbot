@@ -1,28 +1,22 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 export default function Home() {
-  const [form, setForm] = useState({
-    vida: "",
-    tipo: "",
-    nombre: "",
-    concurrencia: "",
-  });
-
+  const [messages, setMessages] = useState([
+    { role: "bot", text: "👋 ¡Hola! Soy tu asistente para estimar costos en AWS. Cuéntame qué necesitas." },
+  ]);
+  const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [msg, setMsg] = useState("");
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-    // 🔹 Limpia mensajes si el usuario empieza a escribir
-    setMsg("");
-  };
+  const sendMessage = async () => {
+    if (!input.trim()) return;
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+    // agrega mensaje del usuario al chat
+    const newUserMsg = { role: "user", text: input };
+    setMessages((prev) => [...prev, newUserMsg]);
+    setInput("");
     setLoading(true);
-    setMsg("");
 
     try {
       const res = await fetch(
@@ -30,34 +24,63 @@ export default function Home() {
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(form),
+          body: JSON.stringify({ input_text: newUserMsg.text }),
         }
       );
 
-      if (!res.ok) throw new Error("❌ No se pudo conectar con el servidor.");
-      setMsg("✅ Datos enviados con éxito 🚀");
+      if (!res.ok) throw new Error("❌ Error al conectar con el servidor.");
+      const data = await res.json();
 
-      // 🔹 Reinicia el formulario
-      setForm({
-        vida: "",
-        tipo: "",
-        nombre: "",
-        concurrencia: "",
-      });
+      // Bot responde según status
+      let botReplies = [];
+
+      if (data.status === "needs_info") {
+        botReplies.push({
+          role: "bot",
+          text: "Necesito más información para continuar:",
+        });
+        (Array.isArray(data.questions_pending) ? data.questions_pending : []).forEach(
+          (q) => {
+            q.questions.forEach((qq) =>
+              botReplies.push({ role: "bot", text: `❓ ${qq}` })
+            );
+          }
+        );
+      } else if (data.status === "complete") {
+        // feedback técnico
+        if (data.feedback) {
+          botReplies.push({
+            role: "bot",
+            text: `💡 Recomendaciones:\n${data.feedback}`,
+          });
+        }
+        // riesgos
+        if (data.risks) {
+          botReplies.push({
+            role: "bot",
+            text: `⚠️ Riesgos:\n${data.risks}`,
+          });
+        }
+        // tabla de costos
+        if (data.html) {
+          botReplies.push({
+            role: "bot",
+            text: "💰 Aquí tienes la estimación de costos:",
+            html: data.html,
+          });
+        }
+      }
+
+      setMessages((prev) => [...prev, ...botReplies]);
     } catch (err) {
-      setMsg(err.message);
+      setMessages((prev) => [
+        ...prev,
+        { role: "bot", text: "❌ Hubo un error al procesar tu solicitud." },
+      ]);
     } finally {
       setLoading(false);
     }
   };
-
-  // 🔹 Borra mensaje automáticamente a los 3s
-  useEffect(() => {
-    if (msg) {
-      const timer = setTimeout(() => setMsg(""), 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [msg]);
 
   return (
     <main className="min-h-screen flex">
@@ -76,64 +99,55 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Panel derecho */}
-      <div className="w-1/2 bg-gray-50 flex justify-center items-center">
-        <div className="bg-white shadow-xl rounded-2xl p-8 w-full max-w-md">
-          <h2 className="text-xl font-bold text-gray-800 mb-4">
-            Completa los datos
-          </h2>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <input
-              name="vida"
-              placeholder="Vida del Componente"
-              value={form.vida}
-              onChange={handleChange}
-              disabled={loading}
-              className="w-full px-4 py-2 border rounded-lg"
-            />
-            <input
-              name="tipo"
-              placeholder="Tipo de Componente"
-              value={form.tipo}
-              onChange={handleChange}
-              disabled={loading}
-              className="w-full px-4 py-2 border rounded-lg"
-            />
-            <input
-              name="nombre"
-              placeholder="Nombre del Componente"
-              value={form.nombre}
-              onChange={handleChange}
-              disabled={loading}
-              className="w-full px-4 py-2 border rounded-lg"
-            />
-            <input
-              name="concurrencia"
-              placeholder="PROD Concurrencia/mes (±)"
-              value={form.concurrencia}
-              onChange={handleChange}
-              disabled={loading}
-              className="w-full px-4 py-2 border rounded-lg"
-            />
+      {/* Panel derecho - Chat */}
+      <div className="w-1/2 bg-gray-50 flex flex-col justify-between items-center">
+        <div className="bg-white shadow-xl rounded-2xl p-6 w-full max-w-md flex flex-col flex-grow">
+          {/* Chat log */}
+          <div className="flex-grow overflow-y-auto space-y-3 mb-4">
+            {messages.map((msg, i) => (
+              <div
+                key={i}
+                className={`p-3 rounded-lg max-w-xs ${
+                  msg.role === "user"
+                    ? "bg-green-100 self-end text-green-900 ml-auto"
+                    : "bg-gray-100 self-start text-gray-800"
+                }`}
+              >
+                {msg.text &&
+                  msg.text.split("\n").map((line, idx) => (
+                    <p key={idx} className="mb-1">
+                      {line}
+                    </p>
+                  ))}
+                {msg.html && (
+                  <div
+                    className="mt-2"
+                    dangerouslySetInnerHTML={{ __html: msg.html }}
+                  />
+                )}
+              </div>
+            ))}
+          </div>
 
+          {/* Input */}
+          <div className="flex items-center space-x-2">
+            <input
+              type="text"
+              placeholder="Escribe tu mensaje..."
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+              disabled={loading}
+              className="flex-grow px-4 py-2 border rounded-lg"
+            />
             <button
-              type="submit"
+              onClick={sendMessage}
               disabled={loading}
-              className="w-full bg-green-700 text-white py-2 rounded-lg font-semibold hover:bg-green-800 transition disabled:opacity-50"
+              className="bg-green-700 text-white px-4 py-2 rounded-lg font-semibold hover:bg-green-800 transition disabled:opacity-50"
             >
-              {loading ? "Enviando..." : "Enviar"}
+              {loading ? "..." : "Enviar"}
             </button>
-          </form>
-
-          {msg && (
-            <p
-              className={`mt-4 text-center text-sm ${
-                msg.startsWith("✅") ? "text-green-700" : "text-red-600"
-              }`}
-            >
-              {msg}
-            </p>
-          )}
+          </div>
         </div>
       </div>
     </main>
