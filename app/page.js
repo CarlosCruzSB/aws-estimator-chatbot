@@ -36,35 +36,55 @@ export default function Home() {
 
       let botReplies = [];
 
-      // ✅ Caso simple: flujo devuelve un "reply" directo
-      if (data.reply) {
-        botReplies.push({ role: "bot", text: data.reply });
+      // 🔹 Caso: falta información
+      if (data.status === "needs_info") {
+        botReplies.push({
+          role: "bot",
+          text: "Necesito más información para continuar:",
+        });
+
+        if (Array.isArray(data.questions_pending)) {
+          data.questions_pending.forEach((q) => {
+            q.questions.forEach((qq) =>
+              botReplies.push({ role: "bot", text: `❓ ${qq}` })
+            );
+          });
+        }
       }
 
-      // ✅ Caso Gemini pide más información
-      if (data.status === "needs_info" && Array.isArray(data.questions_pending)) {
-        botReplies.push({ role: "bot", text: "Necesito más información para continuar:" });
-        data.questions_pending.forEach((q) => {
-          (q.questions || []).forEach((qq) =>
-            botReplies.push({ role: "bot", text: `❓ ${qq}` })
-          );
+      // 🔹 Caso: ya está completo
+      if (data.status === "complete") {
+        if (Array.isArray(data.feedback) && data.feedback.length > 0) {
+          botReplies.push({
+            role: "bot",
+            list: data.feedback,
+            listType: "feedback",
+          });
+        }
+        if (Array.isArray(data.risks) && data.risks.length > 0) {
+          botReplies.push({
+            role: "bot",
+            list: data.risks,
+            listType: "risks",
+          });
+        }
+        if (data.html) {
+          botReplies.push({
+            role: "bot",
+            html: data.html,
+          });
+        }
+      }
+
+      // 🔹 Fallback: si el backend solo envía un "reply"
+      if (data.reply) {
+        botReplies.push({
+          role: "bot",
+          text: data.reply,
         });
       }
 
-      // ✅ Caso completo con feedback/risks/html
-      if (data.status === "complete") {
-        if (Array.isArray(data.feedback) && data.feedback.length > 0) {
-          botReplies.push({ role: "bot", list: data.feedback, listType: "feedback" });
-        }
-        if (Array.isArray(data.risks) && data.risks.length > 0) {
-          botReplies.push({ role: "bot", list: data.risks, listType: "risks" });
-        }
-        if (data.html) {
-          botReplies.push({ role: "bot", html: data.html });
-        }
-      }
-
-      // ⚠️ Si no hubo nada que mostrar
+      // 🔹 Si no hubo nada que mostrar
       if (botReplies.length === 0) {
         botReplies.push({
           role: "bot",
