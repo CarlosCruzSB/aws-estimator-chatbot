@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Paperclip } from "lucide-react"; // icono clip
+import { Paperclip, X } from "lucide-react"; // iconos
 
 export default function Home() {
   const [messages, setMessages] = useState([
@@ -124,7 +124,7 @@ export default function Home() {
       ]);
     } finally {
       setLoading(false);
-      setFile(null); // limpiar archivo adjunto
+      setFile(null); // limpiar archivo adjunto después de enviar
     }
   };
 
@@ -191,40 +191,56 @@ export default function Home() {
             ))}
           </div>
 
-          {/* Input */}
-          <div className="flex items-center space-x-2">
-            {/* Botón de adjuntar archivo */}
-            <label className="cursor-pointer p-2 bg-gray-200 rounded-lg hover:bg-gray-300 transition">
-              <Paperclip className="w-5 h-5 text-gray-600" />
+          {/* Input + Adjuntar */}
+          <div className="flex flex-col space-y-2">
+            {/* Adjuntar archivo */}
+            <div className="flex items-center space-x-2">
+              <label className="cursor-pointer p-2 bg-gray-200 rounded-lg hover:bg-gray-300 transition">
+                <Paperclip className="w-5 h-5 text-gray-600" />
+                <input
+                  type="file"
+                  accept=".drawio,.xml"
+                  className="hidden"
+                  onChange={(e) => setFile(e.target.files[0])}
+                />
+              </label>
+
               <input
-                type="file"
-                accept=".drawio,.xml"
-                className="hidden"
-                onChange={(e) => setFile(e.target.files[0])}
+                type="text"
+                placeholder="Escribe tu mensaje..."
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+                disabled={loading}
+                className="flex-grow px-4 py-2 border rounded-lg"
               />
-            </label>
 
-            <input
-              type="text"
-              placeholder="Escribe tu mensaje..."
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-              disabled={loading}
-              className="flex-grow px-4 py-2 border rounded-lg"
-            />
+              <button
+                onClick={sendMessage}
+                disabled={loading}
+                className="bg-green-700 text-white px-4 py-2 rounded-lg font-semibold hover:bg-green-800 transition disabled:opacity-50"
+              >
+                {loading ? "..." : "Enviar"}
+              </button>
+            </div>
 
-            <button
-              onClick={sendMessage}
-              disabled={loading}
-              className="bg-green-700 text-white px-4 py-2 rounded-lg font-semibold hover:bg-green-800 transition disabled:opacity-50"
-            >
-              {loading ? "..." : "Enviar"}
-            </button>
+            {/* Mostrar archivo seleccionado */}
+            {file && (
+              <div className="flex items-center justify-between bg-gray-100 px-3 py-2 rounded-lg text-sm text-gray-700">
+                <span>📂 {file.name}</span>
+                <button
+                  onClick={() => setFile(null)}
+                  className="text-red-500 hover:text-red-700"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
     </main>
   );
 }
+
 
