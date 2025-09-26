@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Paperclip } from "lucide-react"; // icono clip
 
 export default function Home() {
   const [messages, setMessages] = useState([
@@ -10,64 +11,53 @@ export default function Home() {
     },
   ]);
   const [input, setInput] = useState("");
+  const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
 
   const sendMessage = async () => {
-    if (!input.trim()) return;
+    if (!input.trim() && !file) return;
 
-    const newUserMsg = { role: "user", text: input };
+    const newUserMsg = {
+      role: "user",
+      text: input || (file ? `📎 Archivo adjunto: ${file.name}` : ""),
+    };
     setMessages((prev) => [...prev, newUserMsg]);
     setInput("");
     setLoading(true);
 
     try {
-      const res = await fetch(
-        "https://segurobolivar-trial.app.n8n.cloud/webhook/aws-estimator",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ input_text: newUserMsg.text }),
-        }
-      );
+      let res;
+
+      if (file) {
+        // 🔹 Si hay archivo, usar FormData
+        const formData = new FormData();
+        if (input.trim()) formData.append("input_text", input);
+        formData.append("file", file);
+
+        res = await fetch(
+          "https://segurobolivar-trial.app.n8n.cloud/webhook/aws-estimator",
+          {
+            method: "POST",
+            body: formData,
+          }
+        );
+      } else {
+        // 🔹 Solo texto
+        res = await fetch(
+          "https://segurobolivar-trial.app.n8n.cloud/webhook/aws-estimator",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ input_text: newUserMsg.text }),
+          }
+        );
+      }
 
       if (!res.ok) throw new Error("❌ Error al conectar con el servidor.");
       const data = await res.json();
       console.log("📩 Respuesta de n8n:", data);
 
       let botReplies = [];
-
-      // 🔹 Caso: respuesta es un array (tabla de costos)
-      if (Array.isArray(data)) {
-        const tableHtml = `
-          <div class="overflow-x-auto mt-2">
-            <table class="min-w-full border border-gray-300 rounded-xl shadow-sm text-sm">
-              <thead class="bg-green-700 text-white">
-                <tr>
-                  <th class="border px-3 py-2 text-left">Servicio</th>
-                  <th class="border px-3 py-2 text-left">Región</th>
-                  <th class="border px-3 py-2 text-right">Costo Mensual (USD)</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-gray-200">
-                ${data
-                  .map(
-                    (item, idx) => `
-                  <tr class="${idx % 2 === 0 ? "bg-gray-50" : "bg-white"} hover:bg-green-50 transition">
-                    <td class="px-3 py-2 font-medium text-gray-800">${item.service}</td>
-                    <td class="px-3 py-2 text-gray-600">${item.region ?? "-"}</td>
-                    <td class="px-3 py-2 text-right font-semibold text-green-700">
-                      $${item.monthlyCost ?? "-"}
-                    </td>
-                  </tr>
-                `
-                  )
-                  .join("")}
-              </tbody>
-            </table>
-          </div>
-        `;
-        botReplies.push({ role: "bot", html: tableHtml });
-      }
 
       // 🔹 Caso: falta información
       if (data.status === "needs_info") {
@@ -109,7 +99,7 @@ export default function Home() {
         }
       }
 
-      // 🔹 Fallback: reply simple
+      // 🔹 Fallback: si el backend solo envía un "reply"
       if (data.reply) {
         botReplies.push({
           role: "bot",
@@ -134,6 +124,7 @@ export default function Home() {
       ]);
     } finally {
       setLoading(false);
+      setFile(null); // limpiar archivo adjunto
     }
   };
 
@@ -142,7 +133,7 @@ export default function Home() {
       {/* Panel izquierdo */}
       <div className="w-1/2 bg-green-900 text-white flex flex-col justify-center items-start px-16">
         <h1 className="text-4xl font-bold mb-4">
-          ¡Bienvenido al Estimador de costos AWS! 🚀
+          ¡Bienvenido al Estimador de costos AWS!
         </h1>
         <p className="text-lg mb-2">
           Calcula costos de servicios en la nube AWS{" "}
@@ -189,7 +180,7 @@ export default function Home() {
                   </ul>
                 )}
 
-                {/* HTML (tabla de costos u otro contenido) */}
+                {/* HTML (tabla de costos) */}
                 {msg.html && (
                   <div
                     className="mt-2"
@@ -202,6 +193,17 @@ export default function Home() {
 
           {/* Input */}
           <div className="flex items-center space-x-2">
+            {/* Botón de adjuntar archivo */}
+            <label className="cursor-pointer p-2 bg-gray-200 rounded-lg hover:bg-gray-300 transition">
+              <Paperclip className="w-5 h-5 text-gray-600" />
+              <input
+                type="file"
+                accept=".drawio,.xml"
+                className="hidden"
+                onChange={(e) => setFile(e.target.files[0])}
+              />
+            </label>
+
             <input
               type="text"
               placeholder="Escribe tu mensaje..."
@@ -211,6 +213,7 @@ export default function Home() {
               disabled={loading}
               className="flex-grow px-4 py-2 border rounded-lg"
             />
+
             <button
               onClick={sendMessage}
               disabled={loading}
@@ -224,3 +227,4 @@ export default function Home() {
     </main>
   );
 }
+
