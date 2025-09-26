@@ -1,0 +1,83 @@
+<mxfile host="app.diagrams.net">
+  <diagram id="aws-arch" name="Correos Certificados">
+    <mxGraphModel dx="1300" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2000" pageHeight="1400" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        
+        <!-- API Gateway -->
+        <mxCell id="api" value="API Gateway" style="shape=mxgraph.aws3.api_gateway;fillColor=#FF9900;gradientColor=none;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="120" width="100" height="80" as="geometry"/>
+        </mxCell>
+
+        <!-- Lambda Router -->
+        <mxCell id="router" value="Lambda Router" style="shape=mxgraph.aws3.lambda_function;fillColor=#FFCC00;gradientColor=none;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="200" y="120" width="120" height="80" as="geometry"/>
+        </mxCell>
+
+        <!-- SQS Envío -->
+        <mxCell id="sqs_send" value="SQS Envío (opcional)" style="shape=mxgraph.aws3.sqs;fillColor=#6699CC;gradientColor=none;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="400" y="40" width="140" height="80" as="geometry"/>
+        </mxCell>
+
+        <!-- SQS Masiva -->
+        <mxCell id="sqs_mass" value="SQS Certificación Masiva (~121k/mes)" style="shape=mxgraph.aws3.sqs;fillColor=#336699;gradientColor=none;fontColor=#FFFFFF;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="400" y="140" width="180" height="80" as="geometry"/>
+        </mxCell>
+
+        <!-- SQS Pequeños -->
+        <mxCell id="sqs_small" value="SQS Certificación Medios/Bajos (~9k/mes)" style="shape=mxgraph.aws3.sqs;fillColor=#336699;gradientColor=none;fontColor=#FFFFFF;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="400" y="240" width="200" height="80" as="geometry"/>
+        </mxCell>
+
+        <!-- Lambda Sender -->
+        <mxCell id="sender" value="Lambda Sender" style="shape=mxgraph.aws3.lambda_function;fillColor=#FFCC00;gradientColor=none;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="640" y="40" width="120" height="80" as="geometry"/>
+        </mxCell>
+
+        <!-- Lambda Certifier Masivos -->
+        <mxCell id="cert_mass" value="Lambda Certifier Masivos" style="shape=mxgraph.aws3.lambda_function;fillColor=#FFCC00;gradientColor=none;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="640" y="140" width="160" height="80" as="geometry"/>
+        </mxCell>
+
+        <!-- Lambda Certifier Small -->
+        <mxCell id="cert_small" value="Lambda Certifier Medios" style="shape=mxgraph.aws3.lambda_function;fillColor=#FFCC00;gradientColor=none;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="640" y="240" width="160" height="80" as="geometry"/>
+        </mxCell>
+
+        <!-- Lambda Scanner -->
+        <mxCell id="scanner" value="Lambda Scanner (EventBridge cada hora)" style="shape=mxgraph.aws3.lambda_function;fillColor=#FFCC00;gradientColor=none;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="200" y="340" width="220" height="80" as="geometry"/>
+        </mxCell>
+
+        <!-- DB -->
+        <mxCell id="db" value="BD (RDS / DynamoDB)" style="shape=mxgraph.aws3.rds;fillColor=#99CC66;gradientColor=none;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="480" y="340" width="160" height="80" as="geometry"/>
+        </mxCell>
+
+        <!-- Proveedor Externo -->
+        <mxCell id="provider" value="Proveedor 472 / Servientrega" style="shape=mxgraph.cloud;fillColor=#FF6666;gradientColor=none;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="860" y="180" width="180" height="80" as="geometry"/>
+        </mxCell>
+
+        <!-- Conectores -->
+        <mxCell id="edge1" edge="1" parent="1" source="api" target="router" style="endArrow=block;strokeWidth=2;"/>
+        <mxCell id="edge2" edge="1" parent="1" source="router" target="sqs_send" style="endArrow=block;strokeWidth=2;"/>
+        <mxCell id="edge3" edge="1" parent="1" source="router" target="sqs_mass" style="endArrow=block;strokeWidth=2;"/>
+        <mxCell id="edge4" edge="1" parent="1" source="router" target="sqs_small" style="endArrow=block;strokeWidth=2;"/>
+
+        <mxCell id="edge5" edge="1" parent="1" source="sqs_send" target="sender" style="endArrow=block;strokeWidth=2;"/>
+        <mxCell id="edge6" edge="1" parent="1" source="sqs_mass" target="cert_mass" style="endArrow=block;strokeWidth=2;"/>
+        <mxCell id="edge7" edge="1" parent="1" source="sqs_small" target="cert_small" style="endArrow=block;strokeWidth=2;"/>
+
+        <mxCell id="edge8" edge="1" parent="1" source="scanner" target="db" style="endArrow=block;strokeWidth=2;"/>
+        <mxCell id="edge9" edge="1" parent="1" source="scanner" target="sqs_mass" style="endArrow=block;strokeWidth=2;"/>
+        <mxCell id="edge10" edge="1" parent="1" source="scanner" target="sqs_small" style="endArrow=block;strokeWidth=2;"/>
+
+        <mxCell id="edge11" edge="1" parent="1" source="cert_mass" target="provider" style="endArrow=block;strokeWidth=2;"/>
+        <mxCell id="edge12" edge="1" parent="1" source="cert_small" target="provider" style="endArrow=block;strokeWidth=2;"/>
+        <mxCell id="edge13" edge="1" parent="1" source="sender" target="provider" style="endArrow=block;strokeWidth=2;"/>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
