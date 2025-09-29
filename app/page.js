@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { Paperclip, X } from "lucide-react";
 
 export default function Home() {
   const [messages, setMessages] = useState([
@@ -23,6 +22,7 @@ export default function Home() {
     };
     setMessages((prev) => [...prev, newUserMsg]);
     setInput("");
+    setFile(null);
     setLoading(true);
 
     try {
@@ -30,12 +30,13 @@ export default function Home() {
       let headers = {};
 
       if (file) {
-        // 🔹 Enviar archivo + texto como multipart/form-data
+        // 🔹 Usamos FormData para enviar archivo + texto
         body = new FormData();
         body.append("file", file);
-        if (input.trim()) body.append("input_text", input);
+        body.append("input_text", newUserMsg.text);
+        // No seteamos Content-Type, el navegador lo hace
       } else {
-        // 🔹 Solo texto
+        // 🔹 Caso normal (solo texto)
         body = JSON.stringify({ input_text: newUserMsg.text });
         headers["Content-Type"] = "application/json";
       }
@@ -95,7 +96,7 @@ export default function Home() {
         }
       }
 
-      // 🔹 Fallback: respuesta directa
+      // 🔹 Fallback: si el backend solo envía un "reply"
       if (data.reply) {
         botReplies.push({
           role: "bot",
@@ -103,6 +104,7 @@ export default function Home() {
         });
       }
 
+      // 🔹 Si no hubo nada que mostrar
       if (botReplies.length === 0) {
         botReplies.push({
           role: "bot",
@@ -119,7 +121,6 @@ export default function Home() {
       ]);
     } finally {
       setLoading(false);
-      setFile(null); // limpiar archivo después de enviar
     }
   };
 
@@ -154,8 +155,10 @@ export default function Home() {
                     : "bg-gray-100 self-start text-gray-800"
                 }`}
               >
+                {/* Texto simple */}
                 {msg.text && <p>{msg.text}</p>}
 
+                {/* Listas */}
                 {msg.list && (
                   <ul className="list-disc pl-5 space-y-1">
                     {msg.list.map((item, idx) => (
@@ -173,6 +176,7 @@ export default function Home() {
                   </ul>
                 )}
 
+                {/* HTML (tabla de costos) */}
                 {msg.html && (
                   <div
                     className="mt-2"
@@ -186,8 +190,8 @@ export default function Home() {
           {/* Input */}
           <div className="flex items-center space-x-2">
             {/* Botón adjuntar archivo */}
-            <label className="cursor-pointer p-2 bg-gray-200 rounded-lg hover:bg-gray-300 transition">
-              <Paperclip className="w-5 h-5 text-gray-600" />
+            <label className="cursor-pointer bg-gray-200 px-3 py-2 rounded-lg hover:bg-gray-300 transition">
+              📎
               <input
                 type="file"
                 accept=".drawio,.xml"
@@ -196,15 +200,15 @@ export default function Home() {
               />
             </label>
 
-            {/* Nombre del archivo seleccionado */}
+            {/* Mostrar archivo seleccionado */}
             {file && (
-              <div className="flex items-center space-x-1 text-sm text-gray-600 bg-gray-100 px-2 py-1 rounded-lg">
-                <span>{file.name}</span>
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-gray-600">{file.name}</span>
                 <button
                   onClick={() => setFile(null)}
-                  className="text-red-500 hover:text-red-700"
+                  className="text-red-500 font-bold hover:text-red-700"
                 >
-                  <X className="w-4 h-4" />
+                  ❌
                 </button>
               </div>
             )}
@@ -218,7 +222,6 @@ export default function Home() {
               disabled={loading}
               className="flex-grow px-4 py-2 border rounded-lg"
             />
-
             <button
               onClick={sendMessage}
               disabled={loading}
@@ -232,6 +235,7 @@ export default function Home() {
     </main>
   );
 }
+
 
 
 
