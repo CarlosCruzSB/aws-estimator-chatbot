@@ -16,26 +16,41 @@ export default function Home() {
   const sendMessage = async () => {
     if (!input.trim() && !file) return;
 
-    const newUserMsg = {
-      role: "user",
-      text: input || (file ? `📎 ${file.name}` : ""),
-    };
+    const newUserMsg = file
+      ? { role: "user", text: `📎 ${file.name}` }
+      : { role: "user", text: input };
+
     setMessages((prev) => [...prev, newUserMsg]);
     setInput("");
+    setFile(null);
     setLoading(true);
 
     try {
-      const formData = new FormData();
-      if (input.trim()) formData.append("input_text", input);
-      if (file) formData.append("file", file);
+      let res;
 
-      const res = await fetch(
-        "https://segurobolivar-trial.app.n8n.cloud/webhook/aws-estimator",
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
+      if (file) {
+        // 🔹 Enviar archivo como multipart/form-data
+        const formData = new FormData();
+        formData.append("file", file);
+
+        res = await fetch(
+          "https://segurobolivar-trial.app.n8n.cloud/webhook/aws-estimator",
+          {
+            method: "POST",
+            body: formData,
+          }
+        );
+      } else {
+        // 🔹 Enviar texto como JSON
+        res = await fetch(
+          "https://segurobolivar-trial.app.n8n.cloud/webhook/aws-estimator",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ input_text: newUserMsg.text }),
+          }
+        );
+      }
 
       if (!res.ok) throw new Error("❌ Error al conectar con el servidor.");
       const data = await res.json();
@@ -43,7 +58,7 @@ export default function Home() {
 
       let botReplies = [];
 
-      // Caso: falta información
+      // 🔹 Caso: falta información
       if (data.status === "needs_info") {
         botReplies.push({
           role: "bot",
@@ -59,7 +74,7 @@ export default function Home() {
         }
       }
 
-      // Caso: ya está completo
+      // 🔹 Caso: ya está completo
       if (data.status === "complete") {
         if (Array.isArray(data.feedback) && data.feedback.length > 0) {
           botReplies.push({
@@ -83,7 +98,7 @@ export default function Home() {
         }
       }
 
-      // Fallback: si el backend solo envía un "reply"
+      // 🔹 Fallback: si el backend solo envía un "reply"
       if (data.reply) {
         botReplies.push({
           role: "bot",
@@ -91,7 +106,7 @@ export default function Home() {
         });
       }
 
-      // Si no hubo nada que mostrar
+      // 🔹 Si no hubo nada que mostrar
       if (botReplies.length === 0) {
         botReplies.push({
           role: "bot",
@@ -107,7 +122,6 @@ export default function Home() {
         { role: "bot", text: "❌ Hubo un error al procesar tu solicitud." },
       ]);
     } finally {
-      setFile(null); // limpiar archivo adjunto después de enviar
       setLoading(false);
     }
   };
@@ -175,37 +189,8 @@ export default function Home() {
             ))}
           </div>
 
-          {/* Input */}
+          {/* Input y botones */}
           <div className="flex items-center space-x-2">
-            {/* Input de archivo oculto */}
-            <input
-              type="file"
-              accept=".drawio,.xml"
-              onChange={(e) => {
-                if (e.target.files && e.target.files[0]) {
-                  setFile(e.target.files[0]);
-                }
-              }}
-              className="hidden"
-              id="fileInput"
-            />
-
-            {/* Botón de adjuntar */}
-            <label
-              htmlFor="fileInput"
-              className="cursor-pointer bg-gray-200 px-3 py-2 rounded-lg hover:bg-gray-300 transition"
-            >
-              📎
-            </label>
-
-            {/* Mostrar nombre del archivo si existe */}
-            {file && (
-              <span className="text-sm text-gray-600 truncate max-w-[120px]">
-                {file.name}
-              </span>
-            )}
-
-            {/* Campo de texto */}
             <input
               type="text"
               placeholder="Escribe tu mensaje..."
@@ -216,7 +201,17 @@ export default function Home() {
               className="flex-grow px-4 py-2 border rounded-lg"
             />
 
-            {/* Botón de enviar */}
+            {/* Botón para adjuntar archivo */}
+            <label className="bg-gray-200 px-3 py-2 rounded-lg cursor-pointer hover:bg-gray-300">
+              📎
+              <input
+                type="file"
+                accept=".drawio,.xml"
+                className="hidden"
+                onChange={(e) => setFile(e.target.files[0])}
+              />
+            </label>
+
             <button
               onClick={sendMessage}
               disabled={loading}
