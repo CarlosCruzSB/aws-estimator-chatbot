@@ -22,31 +22,18 @@ export default function Home() {
     };
     setMessages((prev) => [...prev, newUserMsg]);
     setInput("");
-    setFile(null);
     setLoading(true);
 
     try {
-      let body;
-      let headers = {};
-
-      if (file) {
-        // 🔹 Usamos FormData para enviar archivo + texto
-        body = new FormData();
-        body.append("file", file);
-        body.append("input_text", newUserMsg.text);
-        // No seteamos Content-Type, el navegador lo hace
-      } else {
-        // 🔹 Caso normal (solo texto)
-        body = JSON.stringify({ input_text: newUserMsg.text });
-        headers["Content-Type"] = "application/json";
-      }
+      const formData = new FormData();
+      if (input) formData.append("input_text", input);
+      if (file) formData.append("file", file);
 
       const res = await fetch(
         "https://segurobolivar-trial.app.n8n.cloud/webhook/aws-estimator",
         {
           method: "POST",
-          headers,
-          body,
+          body: formData,
         }
       );
 
@@ -121,6 +108,7 @@ export default function Home() {
       ]);
     } finally {
       setLoading(false);
+      setFile(null); // limpiamos el archivo después de enviar
     }
   };
 
@@ -187,31 +175,21 @@ export default function Home() {
             ))}
           </div>
 
-          {/* Input */}
+          {/* Input + Botón adjuntar */}
           <div className="flex items-center space-x-2">
-            {/* Botón adjuntar archivo */}
-            <label className="cursor-pointer bg-gray-200 px-3 py-2 rounded-lg hover:bg-gray-300 transition">
+            <input
+              type="file"
+              accept=".drawio,.xml"
+              onChange={(e) => setFile(e.target.files[0])}
+              className="hidden"
+              id="fileInput"
+            />
+            <label
+              htmlFor="fileInput"
+              className="cursor-pointer bg-gray-200 px-3 py-2 rounded-lg hover:bg-gray-300 transition"
+            >
               📎
-              <input
-                type="file"
-                accept=".drawio,.xml"
-                className="hidden"
-                onChange={(e) => setFile(e.target.files[0])}
-              />
             </label>
-
-            {/* Mostrar archivo seleccionado */}
-            {file && (
-              <div className="flex items-center space-x-2">
-                <span className="text-sm text-gray-600">{file.name}</span>
-                <button
-                  onClick={() => setFile(null)}
-                  className="text-red-500 font-bold hover:text-red-700"
-                >
-                  ❌
-                </button>
-              </div>
-            )}
 
             <input
               type="text"
@@ -222,6 +200,7 @@ export default function Home() {
               disabled={loading}
               className="flex-grow px-4 py-2 border rounded-lg"
             />
+
             <button
               onClick={sendMessage}
               disabled={loading}
